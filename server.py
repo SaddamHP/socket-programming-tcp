@@ -1,12 +1,15 @@
 import socket
 import threading
 
+TCP_IP = 'localhost'
+TCP_PORT = 2025
+
 # Inisialisasi socket TCP IPv4
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-server.bind(('localhost', 12345))
+server.bind((TCP_IP, TCP_PORT))
 server.listen()
 
-print("Chat server is running on port 12345...")
+print(f"Server Chat Berjalan di {TCP_IP}:{TCP_PORT}...")
 
 clients = []  # List koneksi client
 names = {}     # Mapping client_socket -> nama pengguna
