@@ -1,56 +1,57 @@
 import socket
 import threading
-import sys
 
-def coba_koneksi(ip, port):
-    client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    try :
-        client_socket.connect((ip, port))
-        return client_socket
-    except :
-        return None
-
-# Menerima pesan dari server
-def receive_messages(sock):
+def receive_messages(client):
     while True:
         try:
-            message = sock.recv(1024).decode('utf-8')
+            message = client.recv(1024).decode('utf-8')
             if message:
                 print(message)
-                print(f"[Kirim Sebagai ({name})]> ", end="", flush=True)
             else:
+                print("[!] Koneksi ke server terputus.")
+                client.close()
                 break
         except:
-            print("Koneksi Terputus.")
-            sock.close()
+            print("[!] Error saat menerima pesan. Mungkin server terputus.")
+            client.close()
             break
 
-# Mengirim pesan ke server
-def send_messages(sock):
+def send_messages(client, name):
     while True:
         try:
-            message = input(f"[Kirim Sebagai ({name})]> ")
-            if message:
-                sock.send(message.encode('utf-8'))
+            message = input("")
+
+            # Kirim sebagai private message jika formatnya @nama: pesan
+            if message.startswith("@") and " " in message:
+                client.send(message.encode('utf-8'))
+            else:
+                # Tambahkan nama pengirim ke pesan biasa
+                full_message = message
+                client.send(full_message.encode('utf-8'))
         except:
+            print("[!] Gagal mengirim pesan.")
+            client.close()
             break
 
-# Buat koneksi ke server
-server_ip = input("Masuk ke Server IP (localhost): ")
-server_port = 2025
+# Membuat koneksi ke server
+client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+server_ip = input("Masukkan IP Server (contoh: localhost): ")
 
-client = coba_koneksi(server_ip, server_port)
-
-if client is None:
-    print(f"Tidak dapat terhubung ke {server_ip}:{server_port}")
-    sys.exit()
-else:
-    print(f"Terhubung ke {server_ip}:{server_port}")
+try:
+    client.connect((server_ip, 2025))
+except Exception as e:
+    print(f"[!] Gagal terhubung ke server: {e}")
+    exit()
 
 # Input nama pengguna
-name = input("Enter your name: ")
+name = input("Masukkan nama Anda: ")
 client.send(name.encode('utf-8'))
+
+print("\n📢 Selamat datang di Chat Room!")
+print("Ketik pesan langsung untuk broadcast ke semua.")
+print("Untuk kirim pesan pribadi, gunakan format: @nama_tujuan: pesan")
+print("Contoh: @Andi: Halo Andi!\n")
 
 # Mulai thread menerima dan mengirim pesan
 threading.Thread(target=receive_messages, args=(client,)).start()
-threading.Thread(target=send_messages, args=(client,)).start()
+threading.Thread(target=send_messages, args=(client, name)).start()
